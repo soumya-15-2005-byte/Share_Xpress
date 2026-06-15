@@ -29,9 +29,15 @@ async function connectDB() {
         return mongoose.connection;
     }
 
+    let connectionUri = process.env.MONGO_URI;
+    
+    // Automatically strip out placeholder brackets < > or %3C %3E from the URI if left by user
+    connectionUri = connectionUri.replace(/<|>/g, '');
+    connectionUri = connectionUri.replace(/%3C|%3E/gi, '');
+
     try {
         mongoose.set('bufferCommands', false);
-        cachedPromise = mongoose.connect(process.env.MONGO_URI, {
+        cachedPromise = mongoose.connect(connectionUri, {
             useNewUrlParser: true,
             useUnifiedTopology: true,
             serverSelectionTimeoutMS: 5000, // Timeout after 5s instead of 30s
