@@ -13,6 +13,32 @@ if (!process.env.VERCEL && !fs.existsSync(uploadDir)) {
     fs.mkdirSync(uploadDir);
 }
 
+function getBaseUrl(req) {
+  if (process.env.APP_BASE_URL) {
+    return process.env.APP_BASE_URL;
+  }
+  const protocol = req.protocol || 'http';
+  let host = req.get('host') || 'localhost:3000';
+  
+  if (host.startsWith('localhost') || host.startsWith('127.0.0.1')) {
+    const os = require('os');
+    const interfaces = os.networkInterfaces();
+    let localIp = 'localhost';
+    for (const name of Object.keys(interfaces)) {
+      for (const iface of interfaces[name]) {
+        if (iface.family === 'IPv4' && !iface.internal) {
+          localIp = iface.address;
+          break;
+        }
+      }
+      if (localIp !== 'localhost') break;
+    }
+    const port = host.split(':')[1] || '3000';
+    host = `${localIp}:${port}`;
+  }
+  return `${protocol}://${host}`;
+}
+
 let storage = multer.diskStorage({
     destination: (req, file, cb) => cb(null, uploadDir) ,
     filename: (req, file, cb) => {
@@ -42,13 +68,8 @@ router.post('/', (req, res) => {
       };
       
       // Auto-detect base URL from request if not set in env
-      let baseUrl = process.env.APP_BASE_URL;
-      if (!baseUrl) {
-        const protocol = req.protocol || 'http';
-        const host = req.get('host') || 'localhost:3000';
-        baseUrl = `${protocol}://${host}`;
-        console.log(`🌐 Auto-detected base URL: ${baseUrl}`);
-      }
+      const baseUrl = getBaseUrl(req);
+      console.log(`🌐 Resolved base URL: ${baseUrl}`);
       
       // Try to save to MongoDB if connected, otherwise use memory storage
       if (mongoose.connection.readyState === 1) {
@@ -124,13 +145,10 @@ router.post('/send', async (req, res) => {
     // send mail
     const sendMail = require('../services/mailService');
     
+    
     // Auto-detect base URL for email links
-    let emailBaseUrl = process.env.APP_BASE_URL;
-    if (!emailBaseUrl) {
-      const protocol = req.protocol || 'https';
-      const host = req.get('host') || 'localhost:3000';
-      emailBaseUrl = `${protocol}://${host}`;
-    }
+    const emailBaseUrl = getBaseUrl(req);
+    console.log(`✉️ Resolved base URL for email: ${emailBaseUrl}`);
     
     sendMail({
       from: emailFrom,
