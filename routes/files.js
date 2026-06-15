@@ -14,10 +14,11 @@ if (!process.env.VERCEL && !fs.existsSync(uploadDir)) {
 }
 
 function getBaseUrl(req) {
-  if (process.env.APP_BASE_URL) {
+  if (process.env.APP_BASE_URL && !process.env.APP_BASE_URL.includes('localhost') && !process.env.APP_BASE_URL.includes('127.0.0.1')) {
     return process.env.APP_BASE_URL;
   }
-  const protocol = req.protocol || 'http';
+  
+  const protocol = req.headers['x-forwarded-proto'] || req.protocol || 'http';
   let host = req.get('host') || 'localhost:3000';
   
   if (host.startsWith('localhost') || host.startsWith('127.0.0.1')) {

@@ -1,4 +1,12 @@
 module.exports = ({emailFrom, downloadLink, size, expires}) => {
+    let homeLink = 'https://share-xpress-rosy.vercel.app';
+    try {
+        if (downloadLink) {
+            homeLink = new URL(downloadLink).origin;
+        }
+    } catch (e) {
+        console.error('Error parsing downloadLink URL in email template:', e);
+    }
     return `
         <!doctype html>
             <html>
@@ -148,7 +156,7 @@ module.exports = ({emailFrom, downloadLink, size, expires}) => {
                             <tr>
                             <td class="content-block" style="font-family: sans-serif; vertical-align: top; padding-bottom: 10px; padding-top: 10px; font-size: 12px; color: #999999; text-align: center;">
                                 <span class="apple-link" style="color: #999999; font-size: 12px; text-align: center;">inShare inc. main street 29, Moscow</span>
-                                <br> Want to share a file? <a href="http://localhost:3000" style="text-decoration: underline; color: #999999; font-size: 12px; text-align: center;">inShare</a>.
+                                <br> Want to share a file? <a href="${homeLink}" style="text-decoration: underline; color: #999999; font-size: 12px; text-align: center;">inShare</a>.
                             </td>
                             </tr>
                             <tr>

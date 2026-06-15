@@ -1,6 +1,7 @@
 require('dotenv').config();
 const express = require('express');
 const app = express();
+app.enable('trust proxy');
 const PORT = process.env.PORT || 3000;
 const path = require('path');
 const cors = require('cors');
@@ -21,7 +22,7 @@ app.use(cors())
 //     "optionsSuccessStatus": 204
 //   }
 
-app.use(express.static(path.join(__dirname,"./Frontend/public/index.html")))
+// app.use(express.static(path.join(__dirname,"./Frontend/public/index.html")))
 
 // app.use(cors(corsOptions))
 app.use(express.static('public'));
