@@ -46,6 +46,13 @@ app.get("/",(req,res)=>{
   res.sendFile(path.join(__dirname, 'public', 'index.html'));
 })
 
+app.get("/api/db-status", (req, res) => {
+  res.json({
+    mongodb: mongoose.connection.readyState === 1 ? "connected" : "disconnected",
+    readyState: mongoose.connection.readyState
+  });
+});
+
 // Routes 
 app.use('/api/files', require('./routes/files'));
 app.use('/files', require('./routes/show'));
