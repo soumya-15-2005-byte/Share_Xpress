@@ -34,13 +34,11 @@ const { dirname } = require('path');
 // Connect to database on startup (non-blocking)
 connectDB().catch(err => console.error('Database startup connection error:', err.message));
 
-// Ensure database is connected before handling requests in serverless environment
-app.use(async (req, res, next) => {
-    try {
-        await connectDB();
-    } catch (error) {
+// Ensure database connection is initialized (non-blocking)
+app.use((req, res, next) => {
+    connectDB().catch(error => {
         console.error('Database middleware connection error:', error.message);
-    }
+    });
     next();
 });
 
@@ -65,6 +63,15 @@ app.get("/api/db-status", (req, res) => {
 app.use('/api/files', require('./routes/files'));
 app.use('/files', require('./routes/show'));
 app.use('/files/download', require('./routes/download'));
+
+// Global Error Handler
+app.use((err, req, res, next) => {
+    console.error('💥 Unhandled Server Error:', err);
+    res.status(500).json({
+        error: 'Unhandled server error: ' + err.message,
+        stack: process.env.NODE_ENV !== 'production' ? err.stack : undefined
+    });
+});
 
 
 if (require.main === module) {

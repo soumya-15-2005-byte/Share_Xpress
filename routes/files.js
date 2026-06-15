@@ -51,66 +51,77 @@ let storage = multer.diskStorage({
 let upload = multer({ storage, limits:{ fileSize: 1000000 * 100 }, }).single('myfile'); //100mb
 
 router.post('/', (req, res) => {
-    upload(req, res, async (err) => {
-      if (err) {
-        return res.status(500).send({ error: err.message });
-      }
-      
-      if (!req.file) {
-        return res.status(400).send({ error: 'No file uploaded.' });
-      }
-      
-      const uuid = uuidv4();
-      const fileData = {
-        filename: req.file.filename,
-        uuid: uuid,
-        path: req.file.path,
-        size: req.file.size
-      };
-      
-      // Auto-detect base URL from request if not set in env
-      const baseUrl = getBaseUrl(req);
-      console.log(`🌐 Resolved base URL: ${baseUrl}`);
-      
-      // Try to save to MongoDB if connected, otherwise use memory storage
-      if (mongoose.connection.readyState === 1) {
-        try {
-          const fileDataDb = {
-            ...fileData,
-            buffer: fs.readFileSync(req.file.path),
-            contentType: req.file.mimetype
-          };
-          const file = new File(fileDataDb);
-          const response = await file.save();
-          
-          // Clean up temp file
-          try {
-            fs.unlinkSync(req.file.path);
-          } catch (unlinkErr) {
-            console.error('Failed to clean up temp file:', unlinkErr.message);
-          }
-          
-          return res.json({ file: `${baseUrl}/files/${response.uuid}`, uuid: response.uuid });
-        } catch (error) {
-          console.error('Error saving to MongoDB, using memory storage:', error.message);
-          // Fall through to memory storage
-        }
-      } else {
-        console.log('📦 MongoDB not connected, using in-memory storage for testing');
-      }
-      
-      // Use in-memory storage as fallback
-      try {
-        memoryStorage.saveFile(fileData);
-        console.log(`✅ File saved to memory storage: ${uuid}`);
-        return res.json({ file: `${baseUrl}/files/${uuid}`, uuid: uuid });
-      } catch (error) {
-        console.error('Error saving file to memory storage:', error);
-        return res.status(500).send({ 
-          error: 'Failed to save file information. ' + error.message 
+    try {
+        upload(req, res, async (err) => {
+            try {
+                if (err) {
+                    console.error('Multer error:', err);
+                    return res.status(500).send({ error: 'Multer error: ' + err.message });
+                }
+                
+                if (!req.file) {
+                    return res.status(400).send({ error: 'No file uploaded.' });
+                }
+                
+                const uuid = uuidv4();
+                const fileData = {
+                    filename: req.file.filename,
+                    uuid: uuid,
+                    path: req.file.path,
+                    size: req.file.size
+                };
+                
+                // Auto-detect base URL from request if not set in env
+                const baseUrl = getBaseUrl(req);
+                console.log(`🌐 Resolved base URL: ${baseUrl}`);
+                
+                // Try to save to MongoDB if connected, otherwise use memory storage
+                if (mongoose.connection.readyState === 1) {
+                    try {
+                        const fileDataDb = {
+                            ...fileData,
+                            buffer: fs.readFileSync(req.file.path),
+                            contentType: req.file.mimetype
+                        };
+                        const file = new File(fileDataDb);
+                        const response = await file.save();
+                        
+                        // Clean up temp file
+                        try {
+                            fs.unlinkSync(req.file.path);
+                        } catch (unlinkErr) {
+                            console.error('Failed to clean up temp file:', unlinkErr.message);
+                        }
+                        
+                        return res.json({ file: `${baseUrl}/files/${response.uuid}`, uuid: response.uuid });
+                    } catch (error) {
+                        console.error('Error saving to MongoDB, using memory storage:', error.message);
+                        // Fall through to memory storage
+                    }
+                } else {
+                    console.log('📦 MongoDB not connected, using in-memory storage for testing');
+                }
+                
+                // Use in-memory storage as fallback
+                try {
+                    memoryStorage.saveFile(fileData);
+                    console.log(`✅ File saved to memory storage: ${uuid}`);
+                    return res.json({ file: `${baseUrl}/files/${uuid}`, uuid: uuid });
+                } catch (error) {
+                    console.error('Error saving file to memory storage:', error);
+                    return res.status(500).send({ 
+                        error: 'Failed to save file information. ' + error.message 
+                    });
+                }
+            } catch (innerErr) {
+                console.error('Inner upload route error:', innerErr);
+                return res.status(500).send({ error: 'Internal server upload error: ' + innerErr.message });
+            }
         });
-      }
-    });
+    } catch (outerErr) {
+        console.error('Outer upload route error:', outerErr);
+        return res.status(500).send({ error: 'Failed to initiate upload: ' + outerErr.message });
+    }
 });
 
 router.post('/send', async (req, res) => {
