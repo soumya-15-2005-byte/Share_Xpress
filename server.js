@@ -1,4 +1,4 @@
-// Trigger build to apply Vercel env variable updates
+// Re-trigger Vercel deployment to load env updates
 require('dotenv').config();
 const express = require('express');
 const app = express();
