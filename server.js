@@ -31,12 +31,18 @@ app.use(express.static(path.join(__dirname, 'public')));
 const connectDB = require('./config/db');
 const { dirname } = require('path');
 
-// Connect to database (non-blocking - server will start even if DB connection fails)
-try {
-    connectDB();
-} catch (error) {
-    console.error('Database connection error:', error.message);
-}
+// Connect to database on startup (non-blocking)
+connectDB().catch(err => console.error('Database startup connection error:', err.message));
+
+// Ensure database is connected before handling requests in serverless environment
+app.use(async (req, res, next) => {
+    try {
+        await connectDB();
+    } catch (error) {
+        console.error('Database middleware connection error:', error.message);
+    }
+    next();
+});
 
 app.use(express.json());
 
