@@ -47,6 +47,7 @@ app.get("/",(req,res)=>{
 })
 
 app.get("/api/db-status", (req, res) => {
+  const mongoose = require('mongoose');
   res.json({
     mongodb: mongoose.connection.readyState === 1 ? "connected" : "disconnected",
     readyState: mongoose.connection.readyState
