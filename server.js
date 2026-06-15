@@ -25,7 +25,7 @@ app.use(cors())
 // app.use(express.static(path.join(__dirname,"./Frontend/public/index.html")))
 
 // app.use(cors(corsOptions))
-app.use(express.static('public'));
+app.use(express.static(path.join(__dirname, 'public')));
 
 const connectDB = require('./config/db');
 const { dirname } = require('path');

@@ -75,8 +75,21 @@ router.post('/', (req, res) => {
       // Try to save to MongoDB if connected, otherwise use memory storage
       if (mongoose.connection.readyState === 1) {
         try {
-          const file = new File(fileData);
+          const fileDataDb = {
+            ...fileData,
+            buffer: fs.readFileSync(req.file.path),
+            contentType: req.file.mimetype
+          };
+          const file = new File(fileDataDb);
           const response = await file.save();
+          
+          // Clean up temp file
+          try {
+            fs.unlinkSync(req.file.path);
+          } catch (unlinkErr) {
+            console.error('Failed to clean up temp file:', unlinkErr.message);
+          }
+          
           return res.json({ file: `${baseUrl}/files/${response.uuid}`, uuid: response.uuid });
         } catch (error) {
           console.error('Error saving to MongoDB, using memory storage:', error.message);

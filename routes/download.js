@@ -36,6 +36,17 @@ router.get('/:uuid', async (req, res) => {
           return res.render('download', { error: 'Link has expired or file not found.'});
      } 
      
+     // Serve from MongoDB Buffer if it exists
+     if (file.buffer) {
+         console.log(`✅ File found in database, sending buffer: ${file.filename}`);
+         res.set({
+             'Content-Type': file.contentType || 'application/octet-stream',
+             'Content-Disposition': `attachment; filename="${file.filename}"`,
+             'Content-Length': file.size
+         });
+         return res.send(file.buffer);
+     }
+     
      const path = require('path');
      const filePath = path.isAbsolute(file.path) ? file.path : path.join(__dirname, '..', file.path);
      const fs = require('fs');
