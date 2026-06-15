@@ -8,7 +8,7 @@ const memoryStorage = require('../storage/memoryStorage');
 const fs = require('fs');
 
 // Create uploads directory if it doesn't exist
-const uploadDir = process.env.VERCEL ? '/tmp' : 'uploads';
+const uploadDir = process.env.VERCEL ? '/tmp' : path.join(__dirname, '..', 'uploads');
 if (!process.env.VERCEL && !fs.existsSync(uploadDir)) {
     fs.mkdirSync(uploadDir);
 }
